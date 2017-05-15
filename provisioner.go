@@ -1,7 +1,7 @@
 package main
 
 // provision is the custom provision method
-func provision() error {
+func provision(baseDirectoryPath string) error {
 	// TODO Provision ffprobe + ffmpeg =>
 	// - Linux: https://www.johnvansickle.com/ffmpeg/
 	// - Mac: https://evermeet.cx/ffmpeg/
