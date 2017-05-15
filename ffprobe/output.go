@@ -60,7 +60,9 @@ func (d *Division) UnmarshalText(b []byte) (err error) {
 }
 
 // Duration represents a duration in a string format "1.203" such as the duration is 1.203s
-type Duration time.Duration
+type Duration struct {
+	time.Duration
+}
 
 // UnmarshalText implements the TextUnmarshaler interface
 func (d *Duration) UnmarshalText(b []byte) (err error) {
@@ -68,7 +70,7 @@ func (d *Duration) UnmarshalText(b []byte) (err error) {
 	if f, err = strconv.ParseFloat(string(b), 64); err != nil {
 		return
 	}
-	*d = Duration(time.Duration(f * 1e9))
+	*d = Duration{(time.Duration(f * 1e9))}
 	return
 }
 

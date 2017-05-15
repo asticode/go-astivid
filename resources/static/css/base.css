@@ -1,0 +1,100 @@
+/*
+
+Html and Body
+
+*/
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    background-color: #333;
+    color: #fff;
+    font-family: sans-serif;
+    font-size: 16px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/*
+
+Button
+
+*/
+
+button {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 1px 1px rgba(0, 0, 0, 0.075);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+    -moz-user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857;
+    margin-bottom: 0;
+    padding: 6px 12px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    color: #ffffff;
+}
+
+.btn-lg {
+    width: 100%;
+}
+
+.btn-sm {
+    width:200px;
+}
+
+.btn-danger {
+    background-image: linear-gradient(to bottom, #d9534f 0px, #c12e2a 100%);
+    background-repeat: repeat-x;
+    border-color: #b92c28;
+}
+
+.btn-success {
+    background-image: linear-gradient(to bottom,#5cb85c 0,#419641 100%);
+    background-repeat: repeat-x;
+    border-color: #3e8f3e;
+}
+
+/*
+
+Headers
+
+*/
+
+h1 {
+    font-size:1.5em;
+    font-weight: normal;
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+/*
+
+Wrapper
+
+*/
+
+.wrapper {
+    display: table;
+    height: 100%;
+    padding: 20px;
+    width: 100%;
+}
+
+.wrapper .content {
+    text-align: center;
+    height: 100%;
+    width: 100%;
+    display: table-cell;
+    vertical-align: middle;
+}

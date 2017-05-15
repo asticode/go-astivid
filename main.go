@@ -1,39 +1,62 @@
 package main
 
 import (
-	"context"
 	"flag"
 
+	"github.com/asticode/go-astilectron"
+	"github.com/asticode/go-astilectron/loader"
 	"github.com/asticode/go-astilog"
-	"github.com/asticode/go-astitools/flag"
 	"github.com/asticode/go-astivid/ffprobe"
+	"github.com/pkg/errors"
 )
 
-// Flags
+// TODO Provision ffprobe + ffmpeg =>
+// - Linux: https://www.johnvansickle.com/ffmpeg/
+// - Mac: https://evermeet.cx/ffmpeg/
+// - Windows: https://ffmpeg.zeranoe.com/builds/
+
+// Vars
 var (
-	inputs = &astiflag.Strings{}
+	ffprobe *astiffprobe.FFProbe
 )
 
 func main() {
-	// Parse flags
-	flag.Var(inputs, "i", "the input file(s)")
-	flag.Parse()
-
-	// TODO Provision ffprobe + ffmpeg =>
-	// - Linux: https://www.johnvansickle.com/ffmpeg/
-	// - Mac: https://evermeet.cx/ffmpeg/
-	// - Windows: https://ffmpeg.zeranoe.com/builds/
-
 	// Init
-	var c = NewConfiguration()
+	flag.Parse()
+	var c = newConfiguration()
 	astilog.SetLogger(astilog.New(c.Logger))
-	var ffprobe = astiffprobe.New(c.FFProbe)
+	ffprobe = astiffprobe.New(c.FFProbe)
 
-	// Get frames
-	var f []astiffprobe.Frame
+	// Serve
+	var ln = serve(c)
+
+	// Create astilectron
+	var a *astilectron.Astilectron
 	var err error
-	if f, err = ffprobe.Frames(context.Background(), (*inputs)[0], 0); err != nil {
-		astilog.Fatalf("Getting frames of %s failed: %s", (*inputs)[0], err)
+	if a, err = astilectron.New(astilectron.Options{AppName: "Astivid"}); err != nil {
+		astilog.Fatal(errors.Wrap(err, "creating new astilectron failed"))
 	}
-	astilog.Debugf("Frames are %+v", f[:3])
+	defer a.Close()
+	a.HandleSignals()
+
+	// Start loader
+	var l = astiloader.NewForAstilectron(a)
+	go l.Start()
+
+	// Start
+	if err = a.Start(); err != nil {
+		astilog.Fatal(errors.Wrap(err, "starting astilectron failed"))
+	}
+
+	// Create window
+	var w *astilectron.Window
+	if w, err = a.NewWindow("http://"+ln.Addr().String()+"/templates/index", &astilectron.WindowOptions{BackgroundColor: astilectron.PtrStr("#333"), Center: astilectron.PtrBool(true), Height: astilectron.PtrInt(600), Width: astilectron.PtrInt(600)}); err != nil {
+		astilog.Fatal(errors.Wrap(err, "new window failed"))
+	}
+	if err = w.Create(); err != nil {
+		astilog.Fatal(errors.Wrap(err, "creating window failed"))
+	}
+
+	// Blocking pattern
+	a.Wait()
 }

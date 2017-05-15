@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/base.css"/>
+    <script src="/static/js/chart.min.js"></script>
+</head>
+<body>
+<div class="wrapper">
+    {{ range $k, $path := .Paths }}
+        {{ range $k, $stream := .Streams }}
+            <canvas id="{{ .Name }}" width="400" height="400"></canvas>
+            <script>
+                var ctx = document.getElementById("{{ .Name }}");
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {{ range $k, $dataset := .Datasets }}
+                                {
+                                    label: "{{ .Label }}",
+                                    data: [{{ range $k, $data := .Data }}
+                                        {x: {{ .X }}, y: {{ .Y}}},
+                                    {{ end }}],
+                                    borderColor: "{{ .BorderColor }}"
+                                },
+                            {{ end }}
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            xAxes: [{
+                                type: 'linear',
+                                position: 'bottom'
+                            }]
+                        },
+                        title: {
+                            display: true,
+                            text: "{{ .Name }}"
+                        }
+                    }
+                });
+            </script>
+        {{ end }}
+    {{ end }}
+</div>
+</body>
+</html>
