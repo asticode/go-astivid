@@ -15,6 +15,7 @@ var (
 	ffprobe *astiffprobe.FFProbe
 )
 
+//go:generate go-bindata -pkg $GOPACKAGE -o resources.go resources/...
 func main() {
 	// Init
 	flag.Parse()
