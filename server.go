@@ -70,6 +70,7 @@ type BodyChartOptions struct {
 // BodyChartScalesOptions represents a body containing chart scales options
 type BodyChartScalesOptions struct {
 	XAxes []BodyChartAxisOptions `json:"xAxes"`
+	YAxes []BodyChartAxisOptions `json:"yAxes"`
 }
 
 // Chart axis positions
@@ -84,8 +85,15 @@ const (
 
 // BodyChartAxisOptions represents a body containing chart axis options
 type BodyChartAxisOptions struct {
-	Position string `json:"position"`
-	Type     string `json:"type"`
+	Position   string                     `json:"position,omitempty"`
+	ScaleLabel BodyChartScaleLabelOptions `json:"scaleLabel"`
+	Type       string                     `json:"type,omitempty"`
+}
+
+// BodyChartAxisOptions represents a body containing chart scale label options
+type BodyChartScaleLabelOptions struct {
+	Display     bool   `json:"display"`
+	LabelString string `json:"labelString"`
 }
 
 // BodyChartTitleOptions represents a body containing chart title options
@@ -162,7 +170,19 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 						XAxes: []BodyChartAxisOptions{
 							{
 								Position: chartAxisPositionsBottom,
-								Type:     chartAxisTypesLinear,
+								ScaleLabel: BodyChartScaleLabelOptions{
+									Display:     true,
+									LabelString: "Frames index",
+								},
+								Type: chartAxisTypesLinear,
+							},
+						},
+						YAxes: []BodyChartAxisOptions{
+							{
+								ScaleLabel: BodyChartScaleLabelOptions{
+									Display:     true,
+									LabelString: "Bitrate (kb/s)",
+								},
 							},
 						},
 					},
