@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO Provision ffprobe + ffmpeg =>
-// - Linux: https://www.johnvansickle.com/ffmpeg/
-// - Mac: https://evermeet.cx/ffmpeg/
-// - Windows: https://ffmpeg.zeranoe.com/builds/
-
 // Vars
 var (
 	ffprobe *astiffprobe.FFProbe
@@ -27,12 +22,17 @@ func main() {
 	astilog.SetLogger(astilog.New(c.Logger))
 	ffprobe = astiffprobe.New(c.FFProbe)
 
+	// Provision
+	var err error
+	if err = provision(); err != nil {
+		astilog.Fatal(errors.Wrap(err, "provisioning failed"))
+	}
+
 	// Serve
 	var ln = serve(c)
 
 	// Create astilectron
 	var a *astilectron.Astilectron
-	var err error
 	if a, err = astilectron.New(astilectron.Options{AppName: "Astivid"}); err != nil {
 		astilog.Fatal(errors.Wrap(err, "creating new astilectron failed"))
 	}
