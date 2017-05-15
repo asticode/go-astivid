@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/static/css/base.css"/>
-    <script src="/static/js/chart.min.js"></script>
+    <link rel="stylesheet" href="/static/lib/font-awesome/css/font-awesome.min.css">
+    <script src="/static/lib/chart/chart.min.js"></script>
 </head>
 <body>
 <div class="wrapper">
+    <div class="header">
+        <i class="fa fa-arrow-left" onclick="window.history.back();"></i>
+    </div>
     {{ range $k, $path := .Paths }}
         {{ range $k, $stream := .Streams }}
             <canvas id="{{ .Name }}" width="400" height="400"></canvas>
