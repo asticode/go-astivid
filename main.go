@@ -15,6 +15,7 @@ var (
 )
 
 //go:generate go-bindata -pkg $GOPACKAGE -o resources.go resources/...
+// TODO Add subtitle actions => add / convert
 func main() {
 	// Init
 	flag.Parse()
