@@ -13,26 +13,26 @@ func assertSubtitles(t *testing.T, i *astisub.Subtitles) {
 	assert.Len(t, i.Items, 6)
 	assert.Equal(t, time.Minute+39*time.Second, i.Items[0].StartAt)
 	assert.Equal(t, time.Minute+41*time.Second+370*time.Millisecond, i.Items[0].EndAt)
-	assert.Equal(t, []string{"(deep rumbling)"}, i.Items[0].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "(deep rumbling)"}}}, i.Items[0].Lines)
 	assert.Equal(t, 2*time.Minute+4*time.Second+200*time.Millisecond, i.Items[1].StartAt)
 	assert.Equal(t, 2*time.Minute+7*time.Second+566*time.Millisecond, i.Items[1].EndAt)
-	assert.Equal(t, []string{"MAN:", "How did we end up here?"}, i.Items[1].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "MAN:"}}, {{Sentence: "How did we end up here?"}}}, i.Items[1].Lines)
 	assert.Equal(t, 2*time.Minute+12*time.Second+904*time.Millisecond, i.Items[2].StartAt)
 	assert.Equal(t, 2*time.Minute+15*time.Second+407*time.Millisecond, i.Items[2].EndAt)
-	assert.Equal(t, []string{"This place is horrible."}, i.Items[2].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "This place is horrible."}}}, i.Items[2].Lines)
 	assert.Equal(t, 2*time.Minute+20*time.Second+646*time.Millisecond, i.Items[3].StartAt)
 	assert.Equal(t, 2*time.Minute+22*time.Second+848*time.Millisecond, i.Items[3].EndAt)
-	assert.Equal(t, []string{"Smells like balls."}, i.Items[3].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "Smells like balls."}}}, i.Items[3].Lines)
 	assert.Equal(t, 2*time.Minute+28*time.Second+587*time.Millisecond, i.Items[4].StartAt)
 	assert.Equal(t, 2*time.Minute+31*time.Second+23*time.Millisecond, i.Items[4].EndAt)
-	assert.Equal(t, []string{"We don't belong", "in this shithole."}, i.Items[4].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "We don't belong"}}, {{Sentence: "in this shithole."}}}, i.Items[4].Lines)
 	assert.Equal(t, 2*time.Minute+31*time.Second+56*time.Millisecond, i.Items[5].StartAt)
-	assert.Equal(t, 2*time.Minute+33*time.Second+225*time.Millisecond, i.Items[5].EndAt)
-	assert.Equal(t, []string{"(computer playing", "electronic melody)"}, i.Items[5].Text)
+	assert.Equal(t, 2*time.Minute+33*time.Second+250*time.Millisecond, i.Items[5].EndAt)
+	assert.Equal(t, []astisub.Line{{{Sentence: "(computer playing"}}, {{Sentence: "electronic melody)"}}}, i.Items[5].Lines)
 }
 
 func mockSubtitles() *astisub.Subtitles {
-	return &astisub.Subtitles{Items: []*astisub.Subtitle{{EndAt: 3 * time.Second, StartAt: time.Second, Text: []string{"subtitle-1"}}, {EndAt: 7 * time.Second, StartAt: 3 * time.Second, Text: []string{"subtitle-2"}}}}
+	return &astisub.Subtitles{Items: []*astisub.Subtitle{{EndAt: 3 * time.Second, StartAt: time.Second, Lines: []astisub.Line{{{Sentence: "subtitle-1"}}}}, {EndAt: 7 * time.Second, StartAt: 3 * time.Second, Lines: []astisub.Line{{{Sentence: "subtitle-2"}}}}}}
 }
 
 func TestSubtitles_Add(t *testing.T) {
@@ -61,19 +61,19 @@ func TestSubtitles_Fragment(t *testing.T) {
 	assert.Len(t, s.Items, 5)
 	assert.Equal(t, time.Second, s.Items[0].StartAt)
 	assert.Equal(t, 2*time.Second, s.Items[0].EndAt)
-	assert.Equal(t, []string{"subtitle-1"}, s.Items[0].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "subtitle-1"}}}, s.Items[0].Lines)
 	assert.Equal(t, 2*time.Second, s.Items[1].StartAt)
 	assert.Equal(t, 3*time.Second, s.Items[1].EndAt)
-	assert.Equal(t, []string{"subtitle-1"}, s.Items[1].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "subtitle-1"}}}, s.Items[1].Lines)
 	assert.Equal(t, 3*time.Second, s.Items[2].StartAt)
 	assert.Equal(t, 4*time.Second, s.Items[2].EndAt)
-	assert.Equal(t, []string{"subtitle-2"}, s.Items[2].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "subtitle-2"}}}, s.Items[2].Lines)
 	assert.Equal(t, 4*time.Second, s.Items[3].StartAt)
 	assert.Equal(t, 6*time.Second, s.Items[3].EndAt)
-	assert.Equal(t, []string{"subtitle-2"}, s.Items[3].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "subtitle-2"}}}, s.Items[3].Lines)
 	assert.Equal(t, 6*time.Second, s.Items[4].StartAt)
 	assert.Equal(t, 7*time.Second, s.Items[4].EndAt)
-	assert.Equal(t, []string{"subtitle-2"}, s.Items[4].Text)
+	assert.Equal(t, []astisub.Line{{{Sentence: "subtitle-2"}}}, s.Items[4].Lines)
 }
 
 func TestSubtitles_Merge(t *testing.T) {
@@ -96,7 +96,7 @@ func TestSubtitles_ForceDuration(t *testing.T) {
 	assert.Len(t, s.Items, 3)
 	assert.Equal(t, 10*time.Second, s.Items[2].EndAt)
 	assert.Equal(t, 10*time.Second, s.Items[2].StartAt)
-	assert.Equal(t, "...", s.Items[2].Text[0])
+	assert.Equal(t, []astisub.Line{{{Sentence: "..."}}}, s.Items[2].Lines)
 	s.Items[2].StartAt = 7 * time.Second
 	s.Items[2].EndAt = 12 * time.Second
 	s.ForceDuration(10 * time.Second)
