@@ -24,6 +24,7 @@ func main() {
 
 	// Run bootstrap
 	if err := bootstrap.Run(bootstrap.Options{
+		AdaptRouter: adaptRouter,
 		AstilectronOptions: astilectron.Options{
 			AppName: "Astivid",
 		},
@@ -34,7 +35,6 @@ func main() {
 			var l = astiloader.NewForAstilectron(a)
 			go l.Start()
 		},
-		TemplateData: templateData,
 		WindowOptions: &astilectron.WindowOptions{
 			BackgroundColor: astilectron.PtrStr("#333"),
 			Center:          astilectron.PtrBool(true),

@@ -4,22 +4,51 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/static/css/base.css"/>
     <link rel="stylesheet" href="/static/lib/astiloader/astiloader.css"/>
+    <link rel="stylesheet" href="/static/lib/astinotifier/astinotifier.css"/>
     <link rel="stylesheet" href="/static/lib/font-awesome/css/font-awesome.min.css">
 </head>
 <body>
-<div class="wrapper">
-    <div class="content">
-        <button id="btn-open" class="btn-sm btn-success">Open</button>
-    </div>
+<div class="wrapper header">
+    <button id="btn-analyze" class="btn-sm btn-success">Analyze</button>
 </div>
+<div class="wrapper charts" id="charts"></div>
 <script src="/static/lib/astiloader/astiloader.js"></script>
+<script src="/static/lib/astinotifier/astinotifier.js"></script>
+<script src="/static/lib/chart/chart.min.js"></script>
 <script>
+    var countCharts = 0;
     asticode.loader.init();
+    asticode.notifier.init();
     document.addEventListener('astilectron-ready', function() {
-        document.getElementById("btn-open").onclick = function() {
+        document.getElementById("btn-analyze").onclick = function() {
             astilectron.showOpenDialog({properties: ['openFile', 'multiSelections']}, function(paths) {
+                // Send request to /api/frames
                 asticode.loader.show();
-                window.location = "/templates/frames?paths=" + paths.join(',')
+                const req = new XMLHttpRequest();
+                req.onreadystatechange = function(event) {
+                    if (this.readyState === XMLHttpRequest.DONE) {
+                        // Hide loader
+                        asticode.loader.hide()
+
+                        // Process errors
+                        if (req.status != 200) {
+                            asticode.notifier.error(req.responseText);
+                            return
+                        }
+
+                        // Loop through charts
+                        var json = JSON.parse(req.responseText);
+                        for (var i = 0; i < json.charts.length; i++) {
+                            var canvas = document.createElement("canvas");
+                            canvas.id = "chart-" + countCharts;
+                            document.getElementById("charts").append(canvas);
+                            new Chart(canvas, json.charts[i]);
+                            countCharts++
+                        }
+                    }
+                };
+                req.open('POST', '/api/frames', true);
+                req.send(JSON.stringify({paths: paths}));
             })
         }
     })
