@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/base.css"/>
+</head>
+<body>
+<div class="wrapper">
+    <div class="content">
+        <button id="btn-open" class="btn-sm btn-success">Open</button>
+    </div>
+</div>
+<script>
+    document.addEventListener('astilectron-ready', function() {
+        console.log(astilectron)
+        document.getElementById("btn-open").onclick = function() {
+            astilectron.showOpenDialog({properties: ['openFile', 'multiSelections']}, function(paths) {
+                window.location = "/templates/frames?paths=" + paths.join(',')
+            })
+        }
+    })
+</script>
+</body>
+</html>

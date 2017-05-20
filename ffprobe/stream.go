@@ -14,12 +14,19 @@ const (
 	ChannelLayoutStereo = "stereo"
 )
 
-// Codecs
+// Codec names
 const (
-	CodecAC3         = "ac3"
-	CodecDVBSub      = "dvbsub"
-	CodecDVBTeletext = "dvb_teletext"
-	CodecH264        = "h264"
+	CodecNameAC3         = "ac3"
+	CodecNameDVBSub      = "dvbsub"
+	CodecNameDVBTeletext = "dvb_teletext"
+	CodecNameH264        = "h264"
+)
+
+// Codec types
+const (
+	CodecTypeVideo    = "video"
+	CodecTypeAudio    = "audio"
+	CodecTypeSubtitle = "subtitle"
 )
 
 // Pixel formats
@@ -32,13 +39,6 @@ const (
 	ProfileBaseline = "baseline"
 	ProfileHight    = "high"
 	ProfileMain     = "main"
-)
-
-// Stream types
-const (
-	StreamTypeVideo    = "video"
-	StreamTypeAudio    = "audio"
-	StreamTypeSubtitle = "subtitle"
 )
 
 // Stream represents a stream
