@@ -12,19 +12,13 @@ import (
 
 // Flags
 var (
-	configPath    = flag.String("config", "", "the config path")
-	pathStatic    = flag.String("path-static", "", "the static path")
-	pathTemplates = flag.String("path-templates", "", "the templates path")
-	serverAddr    = flag.String("server-addr", "", "the server addr")
+	configPath = flag.String("config", "", "the config path")
 )
 
 // Configuration represents a configuration
 type Configuration struct {
-	FFProbe       astiffprobe.Configuration `toml:"ffprobe"`
-	Logger        astilog.Configuration     `toml:"logger"`
-	PathStatic    string                    `toml:"path_static"`
-	PathTemplates string                    `toml:"path_templates"`
-	ServerAddr    string                    `toml:"server_addr"` // Should be of the form host:port
+	FFProbe astiffprobe.Configuration `toml:"ffprobe"`
+	Logger  astilog.Configuration     `toml:"logger"`
 }
 
 // newConfiguration creates a new configuration object
@@ -37,9 +31,6 @@ func newConfiguration() Configuration {
 		Logger: astilog.Configuration{
 			AppName: "astivid",
 		},
-		PathStatic:    "resources/static",
-		PathTemplates: "resources/templates",
-		ServerAddr:    "127.0.0.1:",
 	}
 
 	// Local config
@@ -52,11 +43,8 @@ func newConfiguration() Configuration {
 
 	// Flag config
 	var c = Configuration{
-		FFProbe:       astiffprobe.FlagConfig(),
-		Logger:        astilog.FlagConfig(),
-		PathStatic:    *pathStatic,
-		PathTemplates: *pathTemplates,
-		ServerAddr:    *serverAddr,
+		FFProbe: astiffprobe.FlagConfig(),
+		Logger:  astilog.FlagConfig(),
 	}
 
 	// Merge configs

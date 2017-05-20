@@ -91,6 +91,18 @@ Wrapper
     width: 100%;
 }
 
+.wrapper .header {
+    left: 0;
+    padding: 15px;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+
+.wrapper .header i {
+    cursor: pointer;
+}
+
 .wrapper .content {
     text-align: center;
     height: 100%;
