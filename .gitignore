@@ -2,4 +2,5 @@
 cover.*
 go-astivid
 test
+resources.go
 vendor

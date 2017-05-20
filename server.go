@@ -2,16 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
-	"text/template"
-
-	"strings"
-
-	"fmt"
 	"path/filepath"
-
 	"strconv"
+	"strings"
+	"text/template"
 
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astitools/template"
