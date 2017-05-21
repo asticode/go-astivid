@@ -164,6 +164,9 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 			}
 
 			// Init chart
+			// TODO Increase title font size
+			// TODO Resize doesn't work on MacOSX
+			// TODO Disable border on btn click
 			var c = BodyChart{
 				Options: BodyChartOptions{
 					Scales: BodyChartScalesOptions{
@@ -172,7 +175,7 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 								Position: chartAxisPositionsBottom,
 								ScaleLabel: BodyChartScaleLabelOptions{
 									Display:     true,
-									LabelString: "Frames index",
+									LabelString: "Timestamp (s)",
 								},
 								Type: chartAxisTypesLinear,
 							},
@@ -207,7 +210,13 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 			}
 
 			// Loop through frames
-			var ds = make(map[string]*BodyChartDataset)
+			var ds = map[string]*BodyChartDataset{
+				"all": {
+					BackgroundColor: chartBackgroundColorGreen,
+					BorderColor:     chartBorderColorGreen,
+					Label:           "All frames",
+				},
+			}
 			for _, f := range fs {
 				if _, ok := ds[f.PictType]; !ok {
 					switch f.PictType {
@@ -231,10 +240,15 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 						}
 					}
 				}
-				ds[f.PictType].Data = append(ds[f.PictType].Data, BodyChartData{
-					X: f.BestEffortTimestampTime.Seconds(),
-					Y: float64(f.PktSize) / f.PktDurationTime.Seconds() / 1024,
-				})
+				// Sometimes the pkt duration time is 0
+				if f.PktDurationTime.Duration > 0 {
+					var d = BodyChartData{
+						X: f.BestEffortTimestampTime.Seconds(),
+						Y: float64(f.PktSize) / f.PktDurationTime.Seconds() / 1024,
+					}
+					ds[f.PictType].Data = append(ds[f.PictType].Data, d)
+					ds["all"].Data = append(ds["all"].Data, d)
+				}
 			}
 
 			// Loop through datasets
