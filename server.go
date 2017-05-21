@@ -249,7 +249,7 @@ func handleAPIFrames(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 
 	// Write
 	if err = json.NewEncoder(rw).Encode(cs); err != nil {
-		err = errors.Wrap(err, "writing outputfailed")
+		err = errors.Wrap(err, "writing output failed")
 		return
 	}
 }

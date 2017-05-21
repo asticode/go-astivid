@@ -5,7 +5,6 @@ import (
 
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron/bootstrap"
-	"github.com/asticode/go-astilectron/loader"
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astivid/ffprobe"
 )
@@ -32,10 +31,6 @@ func main() {
 		CustomProvision: provision,
 		Homepage:        "/templates/index",
 		RestoreAssets:   RestoreAssets,
-		StartLoader: func(a *astilectron.Astilectron) {
-			var l = astiloader.NewForAstilectron(a)
-			go l.Start()
-		},
 		WindowOptions: &astilectron.WindowOptions{
 			BackgroundColor: astilectron.PtrStr("#333"),
 			Center:          astilectron.PtrBool(true),
