@@ -2,6 +2,7 @@ package astisub
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ var (
 )
 
 // parseDurationSRT parses an .srt duration
-func parseDurationSRT(i string) (o time.Duration, err error) {
+func parseDurationSRT(i string) (time.Duration, error) {
 	return parseDuration(i, ",")
 }
 
@@ -39,15 +40,23 @@ func ReadFromSRT(i io.Reader) (o *Subtitles, err error) {
 		// Line contains time boundaries
 		if strings.Contains(line, timeBoundariesSeparator) {
 			// Remove last item of previous subtitle since it's the index
-			s.Text = s.Text[:len(s.Text)-1]
+			s.Lines = s.Lines[:len(s.Lines)-1]
 
 			// Remove trailing empty lines
-			if len(s.Text) > 0 {
-				for i := len(s.Text) - 1; i > 0; i-- {
-					if s.Text[i] == "" {
-						s.Text = s.Text[:i]
-					} else {
-						break
+			if len(s.Lines) > 0 {
+				for i := len(s.Lines) - 1; i >= 0; i-- {
+					if len(s.Lines[i]) > 0 {
+						for j := len(s.Lines[i]) - 1; j >= 0; j-- {
+							if len(s.Lines[i][j].Sentence) == 0 {
+								s.Lines[i] = s.Lines[i][:j]
+							} else {
+								break
+							}
+						}
+						if len(s.Lines[i]) == 0 {
+							s.Lines = s.Lines[:i]
+						}
+
 					}
 				}
 			}
@@ -68,14 +77,14 @@ func ReadFromSRT(i io.Reader) (o *Subtitles, err error) {
 			o.Items = append(o.Items, s)
 		} else {
 			// Add text
-			s.Text = append(s.Text, line)
+			s.Lines = append(s.Lines, []Text{{Sentence: line}})
 		}
 	}
 	return
 }
 
 // formatDurationSRT formats an .srt duration
-func formatDurationSRT(i time.Duration) (s string) {
+func formatDurationSRT(i time.Duration) string {
 	return formatDuration(i, ",")
 }
 
@@ -103,9 +112,14 @@ func (s Subtitles) WriteToSRT(o io.Writer) (err error) {
 		c = append(c, []byte(formatDurationSRT(v.EndAt))...)
 		c = append(c, bytesLineSeparator...)
 
-		// Add text
-		for _, t := range v.Text {
-			c = append(c, []byte(t)...)
+		// Loop through lines
+		for _, l := range v.Lines {
+			// Loop through texts
+			var ts [][]byte
+			for _, t := range l {
+				ts = append(ts, []byte(t.Sentence))
+			}
+			c = append(c, bytes.Join(ts, bytesSpace)...)
 			c = append(c, bytesLineSeparator...)
 		}
 

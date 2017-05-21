@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"encoding/xml"
+
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +20,7 @@ var (
 	bytesComma         = []byte(",")
 	bytesLineSeparator = []byte("\n")
 	bytesPeriod        = []byte(".")
+	bytesSpace         = []byte(" ")
 )
 
 // Errors
@@ -41,7 +44,7 @@ func Open(src string) (s *Subtitles, err error) {
 	case ".srt":
 		s, err = ReadFromSRT(f)
 	case ".ttml":
-		//s, err = ReadFromTTML(f)
+		s, err = ReadFromTTML(f)
 	case ".vtt":
 		//s, err = ReadFromVTT(f)
 	default:
@@ -53,15 +56,41 @@ func Open(src string) (s *Subtitles, err error) {
 // Subtitles represents an ordered list of subtitles with formatting
 type Subtitles struct {
 	Items   []*Subtitle
-	Regions bool
-	Styles  bool
+	Regions []*Region
+	Styles  []*Style
 }
 
-// Subtitle represents a text to show between 2 time boundaries
+// Subtitle represents a text to show between 2 time boundaries with formatting
+// TODO Handle inline formatting
 type Subtitle struct {
 	EndAt   time.Duration
+	Lines   []Line
+	Region  *Region
 	StartAt time.Duration
-	Text    []string
+	Style   *Style
+	Styles  map[string]string
+}
+
+// Region represents a subtitle's region
+type Region struct {
+	ID     string
+	Styles map[string]string
+}
+
+// Style represents a subtitle's style
+type Style struct {
+	ID     string
+	Styles map[string]string
+}
+
+// Line represents a line
+type Line []Text
+
+// Text represents a text
+type Text struct {
+	Sentence string
+	Styles   map[string]string
+	XMLName  xml.Name
 }
 
 // Add adds a duration to each time boundaries. As in the time package, duration can be negative.
@@ -111,7 +140,7 @@ func (s *Subtitles) ForceDuration(d time.Duration) {
 
 	// Add dummy item
 	if s.Duration() < d {
-		s.Items = append(s.Items, &Subtitle{EndAt: d, StartAt: d, Text: []string{"..."}})
+		s.Items = append(s.Items, &Subtitle{EndAt: d, Lines: []Line{[]Text{{Sentence: "..."}}}, StartAt: d})
 	}
 }
 
@@ -208,7 +237,7 @@ func (s Subtitles) Write(dst string) (err error) {
 	case ".srt":
 		err = s.WriteToSRT(f)
 	case ".tml":
-		//err = s.WriteToTTML(f)
+		err = s.WriteToTTML(f)
 	default:
 		err = ErrInvalidExtension
 	}
@@ -223,7 +252,7 @@ func parseDuration(i, millisecondSep string) (o time.Duration, err error) {
 		err = fmt.Errorf("No milliseconds detected in %s", i)
 		return
 	}
-	if len(parts[1]) != 3 {
+	if len(parts[1]) > 3 {
 		err = fmt.Errorf("Invalid number of millisecond digits detected in %s", i)
 		return
 	}
@@ -234,6 +263,14 @@ func parseDuration(i, millisecondSep string) (o time.Duration, err error) {
 	if milliseconds, err = strconv.Atoi(s); err != nil {
 		err = errors.Wrapf(err, "atoi of %s failed", s)
 		return
+	}
+
+	// In case number of milliseconds digits is not 3
+	if len(s) == 2 {
+		milliseconds *= 10
+	}
+	if len(s) == 1 {
+		milliseconds *= 100
 	}
 
 	// Split hours, minutes and seconds
