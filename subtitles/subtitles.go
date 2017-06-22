@@ -74,12 +74,14 @@ type Subtitle struct {
 // Region represents a subtitle's region
 type Region struct {
 	ID     string
+	Style  *Style
 	Styles map[string]string
 }
 
 // Style represents a subtitle's style
 type Style struct {
 	ID     string
+	Style  *Style
 	Styles map[string]string
 }
 

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -223,27 +225,110 @@ func ReadFromTTML(i io.Reader) (o *Subtitles, err error) {
 		return
 	}
 
-	// Loop through subtitles
-	for _, s := range ttml.Subtitles {
-		// TODO Get line instead
-		// Get text
-		var text []string
-		for _, t := range s.Text {
-			// TODO Is is the correct way to handle br ?
-			if strings.ToLower(t.XMLName.Local) != "br" {
-				text = append(text, t.Sentence)
+	// Loop through styles
+	var styles = make(map[string]*Style)
+	var parentStyles = make(map[string]*Style)
+	for _, ts := range ttml.Styles {
+		var s = &Style{
+			ID:     ts.ID,
+			Styles: make(map[string]string),
+		}
+		for _, is := range ts.Styles {
+			s.Styles[is.Name.Local] = is.Value
+		}
+		styles[s.ID] = s
+		if len(ts.Style) > 0 {
+			parentStyles[ts.Style] = s
+		}
+	}
+
+	// Take care of parent styles
+	for id, s := range parentStyles {
+		if _, ok := styles[id]; !ok {
+			err = fmt.Errorf("Unknown style ID %s for style ID %s", id, s.ID)
+			return
+		}
+		s.Style = styles[id]
+	}
+
+	// Loop through regions
+	var regions = make(map[string]*Region)
+	for _, tr := range ttml.Regions {
+		var r = &Region{
+			ID:     tr.ID,
+			Styles: make(map[string]string),
+		}
+		for _, is := range tr.Styles {
+			r.Styles[is.Name.Local] = is.Value
+		}
+		if len(tr.Style) > 0 {
+			if _, ok := styles[tr.Style]; !ok {
+				err = fmt.Errorf("Unknown style ID %s for region ID %s", tr.Style, r.ID)
+				return
 			}
+			r.Style = styles[tr.Style]
+		}
+		regions[r.ID] = r
+	}
+
+	// Loop through subtitles
+	for _, ts := range ttml.Subtitles {
+		// Init item
+		ts.Begin.framerate = ttml.Framerate
+		ts.End.framerate = ttml.Framerate
+		var s = &Subtitle{
+			EndAt:   ts.End.Duration(),
+			StartAt: ts.Begin.Duration(),
+			Styles:  make(map[string]string),
 		}
 
-		// Update framerate
-		s.Begin.framerate = ttml.Framerate
-		s.End.framerate = ttml.Framerate
+		// Add region
+		if len(ts.Region) > 0 {
+			if _, ok := regions[ts.Region]; !ok {
+				err = fmt.Errorf("Unknown region ID %s for subtitle between %s and %s", ts.Region, s.StartAt, s.EndAt)
+				return
+			}
+			s.Region = regions[ts.Region]
+		}
+
+		// Add style
+		if len(ts.Style) > 0 {
+			if _, ok := styles[ts.Style]; !ok {
+				err = fmt.Errorf("Unknown style ID %s for subtitle between %s and %s", ts.Style, s.StartAt, s.EndAt)
+				return
+			}
+			s.Style = styles[ts.Style]
+		}
+
+		// Add styles
+		for _, tss := range ts.Styles {
+			s.Styles[tss.Name.Local] = tss.Value
+		}
+
+		// Loop through texts
+		var l = &Line{}
+		for _, tt := range ts.Text {
+			// New line
+			if strings.ToLower(tt.XMLName.Local) == "br" {
+				s.Lines = append(s.Lines, *l)
+				l = &Line{}
+				continue
+			}
+
+			// Init text
+			var t = Text{
+				Sentence: tt.Sentence,
+				XMLName:  tt.XMLName,
+			}
+			for _, tss := range tt.Styles {
+				t.Styles[tss.Name.Local] = tss.Value
+			}
+			*l = append(*l, t)
+		}
+		s.Lines = append(s.Lines, *l)
 
 		// Append subtitle
-		o.Items = append(o.Items, &Subtitle{
-			EndAt:   s.End.Duration(),
-			StartAt: s.Begin.Duration(),
-		})
+		o.Items = append(o.Items, s)
 	}
 	return
 }

@@ -16,7 +16,7 @@ func TestSRT(t *testing.T) {
 	// Open
 	s, err := astisub.Open(path)
 	assert.NoError(t, err)
-	assertSubtitles(t, s)
+	assertSubtitleItems(t, s)
 
 	// No subtitles to write
 	w := &bytes.Buffer{}
