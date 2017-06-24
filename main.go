@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 
+	"github.com/asticode/go-astiffprobe"
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron/bootstrap"
 	"github.com/asticode/go-astilog"
-	"github.com/asticode/go-astivid/ffprobe"
 )
 
 // Vars

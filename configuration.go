@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/BurntSushi/toml"
+	"github.com/asticode/go-astiffprobe"
 	"github.com/asticode/go-astilog"
-	"github.com/asticode/go-astivid/ffprobe"
 	"github.com/imdario/mergo"
 )
 
