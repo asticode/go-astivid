@@ -5,33 +5,44 @@ import (
 
 	"github.com/asticode/go-astiffprobe"
 	"github.com/asticode/go-astilectron"
-	"github.com/asticode/go-astilectron/bootstrap"
+	"github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
 )
 
 // Vars
 var (
+	AppName string
+	BuiltAt string
+	c       Configuration
+	debug   = flag.Bool("d", false, "if yes, the app is in debug mode")
 	ffprobe *astiffprobe.FFProbe
 )
 
-//go:generate go-bindata -pkg $GOPACKAGE -o resources.go resources/...
 // TODO Add subtitle actions => add / convert
 func main() {
 	// Init
 	flag.Parse()
-	var c = newConfiguration()
+	c = newConfiguration()
 	astilog.SetLogger(astilog.New(c.Logger))
 	ffprobe = astiffprobe.New(c.FFProbe)
 
+	// TODO Provision ffprobe + ffmpeg =>
+	// - Linux: https://www.johnvansickle.com/ffmpeg/
+	// - Mac: https://evermeet.cx/ffmpeg/
+	// - Windows: https://ffmpeg.zeranoe.com/builds/
+
 	// Run bootstrap
 	if err := bootstrap.Run(bootstrap.Options{
-		AdaptRouter: adaptRouter,
+		Asset: Asset,
 		AstilectronOptions: astilectron.Options{
-			AppName: "Astivid",
+			AppName:            AppName,
+			AppIconDarwinPath:  "resources/gopher.icns",
+			AppIconDefaultPath: "resources/gopher.png",
 		},
-		CustomProvision: provision,
-		Homepage:        "/templates/index",
-		RestoreAssets:   RestoreAssets,
+		Debug:          *debug,
+		Homepage:       "index.html",
+		MessageHandler: handleMessages,
+		RestoreAssets:  RestoreAssets,
 		WindowOptions: &astilectron.WindowOptions{
 			BackgroundColor: astilectron.PtrStr("#333"),
 			Center:          astilectron.PtrBool(true),

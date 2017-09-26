@@ -1,6 +1,8 @@
+.DS_Store
+Thumbs.db
 .idea/
-cover.*
-go-astivid
-test
-resources.go
+bind.go
+output
 vendor
+windows.syso
+test
