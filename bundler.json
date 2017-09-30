@@ -1,0 +1,7 @@
+{
+  "app_name": "Astivid",
+  "icon_path_darwin": "resources/gopher.icns",
+  "icon_path_linux": "resources/gopher.png",
+  "icon_path_windows": "resources/gopher.ico",
+  "output_path": "output"
+}
