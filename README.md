@@ -14,6 +14,7 @@ This project has to be installed similarly to the [demo of astilectron](https://
 Run the following command:
 
     $ go get -u github.com/asticode/go-astivid/...
+    $ rm $GOPATH/src/github.com/asticode/go-astivid/bind.go
 
 ## Step 2: install the bundler
 

@@ -1,13 +1,13 @@
 var index = {
     analyze: function(paths) {
         asticode.loader.show();
-        astilectron.send({"name": "get.frames", payload: paths}, function(message) {
+        astilectron.sendMessage({"name": "get.frames", payload: paths}, function(message) {
             // Hide loader
             asticode.loader.hide();
 
             // Process error
-            if (typeof message.payload.error !== "undefined") {
-                asticode.notifier.error(message.payload.error)
+            if (message.name === "error") {
+                asticode.notifier.error(message.payload)
                 return
             }
 
