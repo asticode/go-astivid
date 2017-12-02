@@ -12,6 +12,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
+	"github.com/asticode/go-astitools/ptr"
 	"github.com/pkg/errors"
 )
 
@@ -70,13 +71,13 @@ func handleGetFrames(i bootstrap.MessageIn) (payload interface{}, err error) {
 			// TODO Resize doesn't work on MacOSX
 			// TODO Disable border on btn click
 			var c = astichartjs.Chart{
-				Options: astichartjs.Options{
-					Scales: astichartjs.Scales{
+				Options: &astichartjs.Options{
+					Scales: &astichartjs.Scales{
 						XAxes: []astichartjs.Axis{
 							{
 								Position: astichartjs.ChartAxisPositionsBottom,
-								ScaleLabel: astichartjs.ScaleLabel{
-									Display:     true,
+								ScaleLabel: &astichartjs.ScaleLabel{
+									Display:     astiptr.Bool(true),
 									LabelString: "Timestamp (s)",
 								},
 								Type: astichartjs.ChartAxisTypesLinear,
@@ -84,14 +85,14 @@ func handleGetFrames(i bootstrap.MessageIn) (payload interface{}, err error) {
 						},
 						YAxes: []astichartjs.Axis{
 							{
-								ScaleLabel: astichartjs.ScaleLabel{
-									Display:     true,
+								ScaleLabel: &astichartjs.ScaleLabel{
+									Display:     astiptr.Bool(true),
 									LabelString: "Bitrate (kb/s)",
 								},
 							},
 						},
 					},
-					Title: astichartjs.Title{Display: true},
+					Title: &astichartjs.Title{Display: astiptr.Bool(true)},
 				},
 				Type: astichartjs.ChartTypeLine,
 			}
