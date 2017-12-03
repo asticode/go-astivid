@@ -16,24 +16,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// MessageError represents an error message
-type MessageError struct {
-	Error string `json:"error"`
-}
-
 // handleMessages handles messages
-func handleMessages(w *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, _ error) {
+func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (_ interface{}, _ error) {
 	// Get payload
-	var errPayload error
 	switch m.Name {
 	case "get.frames":
-		payload, errPayload = handleGetFrames(m)
-	}
-
-	// Process error
-	if errPayload != nil {
-		astilog.Error(errPayload)
-		payload = MessageError{Error: errPayload.Error()}
+		return handleGetFrames(m)
 	}
 	return
 }
@@ -71,6 +59,7 @@ func handleGetFrames(i bootstrap.MessageIn) (payload interface{}, err error) {
 			// TODO Resize doesn't work on MacOSX
 			// TODO Disable border on btn click
 			var c = astichartjs.Chart{
+				Data: &astichartjs.Data{},
 				Options: &astichartjs.Options{
 					Scales: &astichartjs.Scales{
 						XAxes: []astichartjs.Axis{
