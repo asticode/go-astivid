@@ -103,43 +103,34 @@ func handleGetFrames(i bootstrap.MessageIn) (payload interface{}, err error) {
 
 			// Loop through frames
 			var ds = map[string]*astichartjs.Dataset{
-				"all": {
+				"avg": {
 					BackgroundColor: astichartjs.ChartBackgroundColorGreen,
 					BorderColor:     astichartjs.ChartBorderColorGreen,
-					Label:           "All frames",
+					Label:           "Average per GOP",
 				},
 			}
+			var vs []astichartjs.DataPoint
 			for _, f := range fs {
-				if _, ok := ds[f.PictType]; !ok {
-					switch f.PictType {
-					case "B":
-						ds[f.PictType] = &astichartjs.Dataset{
-							BackgroundColor: astichartjs.ChartBackgroundColorBlue,
-							BorderColor:     astichartjs.ChartBorderColorBlue,
-							Label:           "B frames",
-						}
-					case "I":
-						ds[f.PictType] = &astichartjs.Dataset{
-							BackgroundColor: astichartjs.ChartBackgroundColorRed,
-							BorderColor:     astichartjs.ChartBorderColorRed,
-							Label:           "I frames",
-						}
-					case "P":
-						ds[f.PictType] = &astichartjs.Dataset{
-							BackgroundColor: astichartjs.ChartBackgroundColorYellow,
-							BorderColor:     astichartjs.ChartBorderColorYellow,
-							Label:           "P frames",
-						}
+				// Compute average
+				if f.PictType == "I" && len(vs) > 0 {
+					var sum float64
+					for _, dp := range vs {
+						sum += dp.Y
 					}
+					ds["avg"].Data = append(ds["avg"].Data, astichartjs.DataPoint{
+						X: vs[0].X,
+						Y: sum / float64(len(vs)),
+					})
+					vs = []astichartjs.DataPoint{}
 				}
+
 				// Sometimes the pkt duration time is 0
 				if f.PktDurationTime.Duration > 0 {
 					var d = astichartjs.DataPoint{
 						X: f.BestEffortTimestampTime.Seconds(),
-						Y: float64(f.PktSize) / f.PktDurationTime.Seconds() / 1024,
+						Y: float64(f.PktSize) / f.PktDurationTime.Seconds() / 1024 * 8,
 					}
-					ds[f.PictType].Data = append(ds[f.PictType].Data, d)
-					ds["all"].Data = append(ds["all"].Data, d)
+					vs = append(vs, d)
 				}
 			}
 
