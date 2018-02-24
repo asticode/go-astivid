@@ -26,7 +26,7 @@ func newConfiguration() Configuration {
 	// Global config
 	var gc = Configuration{
 		FFProbe: astiffprobe.Configuration{
-			BinaryPath: "ffprobe",
+			BinaryPath: "/usr/local/bin/ffprobe",
 		},
 		Logger: astilog.Configuration{
 			AppName: "astivid",
