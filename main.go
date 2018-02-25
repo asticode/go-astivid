@@ -39,7 +39,7 @@ func main() {
 			AppIconDarwinPath:  "resources/gopher.icns",
 			AppIconDefaultPath: "resources/gopher.png",
 		},
-		Debug:          true,
+		Debug:          *debug,
 		Homepage:       "index.html",
 		MessageHandler: handleMessages,
 		RestoreAssets:  RestoreAssets,
