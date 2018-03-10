@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/BurntSushi/toml"
+	"github.com/asticode/go-astiffmpeg"
 	"github.com/asticode/go-astiffprobe"
 	"github.com/asticode/go-astilog"
 	"github.com/imdario/mergo"
@@ -17,6 +18,7 @@ var (
 
 // Configuration represents a configuration
 type Configuration struct {
+	FFMpeg  astiffmpeg.Configuration  `toml:"ffmpeg"`
 	FFProbe astiffprobe.Configuration `toml:"ffprobe"`
 	Logger  astilog.Configuration     `toml:"logger"`
 }
@@ -25,6 +27,9 @@ type Configuration struct {
 func newConfiguration() Configuration {
 	// Global config
 	var gc = Configuration{
+		FFMpeg: astiffmpeg.Configuration{
+			BinaryPath: "/usr/local/bin/ffmpeg",
+		},
 		FFProbe: astiffprobe.Configuration{
 			BinaryPath: "/usr/local/bin/ffprobe",
 		},
@@ -43,6 +48,7 @@ func newConfiguration() Configuration {
 
 	// Flag config
 	var c = Configuration{
+		FFMpeg:  astiffmpeg.FlagConfig(),
 		FFProbe: astiffprobe.FlagConfig(),
 		Logger:  astilog.FlagConfig(),
 	}

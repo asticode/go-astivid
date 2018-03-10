@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/asticode/go-astiffmpeg"
 	"github.com/asticode/go-astiffprobe"
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron-bootstrap"
@@ -15,6 +16,7 @@ var (
 	BuiltAt string
 	c       Configuration
 	debug   = flag.Bool("d", false, "if yes, the app is in debug mode")
+	ffmpeg  *astiffmpeg.FFMpeg
 	ffprobe *astiffprobe.FFProbe
 )
 
@@ -24,6 +26,7 @@ func main() {
 	flag.Parse()
 	c = newConfiguration()
 	astilog.SetLogger(astilog.New(c.Logger))
+	ffmpeg = astiffmpeg.New(c.FFMpeg)
 	ffprobe = astiffprobe.New(c.FFProbe)
 
 	// TODO Provision ffprobe + ffmpeg =>
@@ -39,7 +42,7 @@ func main() {
 			AppIconDarwinPath:  "resources/gopher.icns",
 			AppIconDefaultPath: "resources/gopher.png",
 		},
-		Debug:          *debug,
+		Debug:          true,
 		Homepage:       "index.html",
 		MessageHandler: handleMessages,
 		RestoreAssets:  RestoreAssets,

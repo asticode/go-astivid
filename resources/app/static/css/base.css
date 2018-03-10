@@ -33,6 +33,8 @@ button {
     color: #ffffff;
 }
 
+button:focus {outline:0;}
+
 .btn-lg {
     width: 100%;
 }
@@ -53,16 +55,30 @@ button {
     border-color: #3e8f3e;
 }
 
-.wrapper {
-    padding: 0.5em;
+.table {
+    display: table;
+    height: 100%;
     width: 100%;
 }
 
-.header {
-    height: 3em;
+.row {
+    display: table-row;
+    height: 100%;
+    width: 100%;
+}
+
+.cell {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 20px;
     text-align: center;
 }
 
 canvas {
     width: 100%;
+}
+
+.btn-margin {
+    display: block;
+    margin: auto auto 20px auto;
 }
