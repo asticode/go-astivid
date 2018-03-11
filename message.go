@@ -19,6 +19,7 @@ import (
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astitools/ptr"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (p interface{}, err error) {
@@ -349,7 +350,7 @@ func handleVisualizePSNRPath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp *ch
 			if len(items) == 2 {
 				v, errParse := strconv.ParseFloat(string(items[1]), 64)
 				if errParse == nil {
-					mp[string(items[0])] = v
+					mp[string(items[0])] = math.Min(v, 100)
 				}
 			}
 		}
