@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"sync"
 
@@ -19,7 +21,6 @@ import (
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astitools/ptr"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (p interface{}, err error) {
@@ -80,6 +81,14 @@ func initVisualize(i bootstrap.MessageIn, labelYAxe string) (b Body, cs []astich
 		return
 	}
 
+	// Create color picker
+	cp = newChartColorPicker()
+
+	// Max number of datasets
+	if len(b.InputPaths) > len(cp.colors) {
+		b.InputPaths = b.InputPaths[:len(cp.colors)]
+	}
+
 	// Create charts
 	// TODO Increase title font size
 	// TODO Resize doesn't work on MacOSX
@@ -109,9 +118,6 @@ func initVisualize(i bootstrap.MessageIn, labelYAxe string) (b Body, cs []astich
 		},
 		Type: astichartjs.ChartTypeLine,
 	}}
-
-	// Create color picker
-	cp = newChartColorPicker()
 	return
 }
 
@@ -249,53 +255,35 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 	}
 
 	// Loop through paths
-	var m = &sync.Mutex{}
-	var wg = &sync.WaitGroup{}
-	for _, p := range b.InputPaths {
-		wg.Add(1)
-		go handleVisualizePSNRPath(p, wg, m, cp, cs[0].Data, &err, s, b.SourcePath)
-	}
-	wg.Wait()
-	payload = cs
-	return
-}
+	fi := []astiffmpeg.Input{{Path: b.SourcePath}}
+	var fo []astiffmpeg.Output
+	fs := make(map[string]string)
+	var ks []string
+	for idx, p := range b.InputPaths {
+		// Add input
+		fi = append(fi, astiffmpeg.Input{Path: p})
 
-func handleVisualizePSNRPath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp *chartColorPicker, csd *astichartjs.Data, err *error, s *astiffprobe.Stream, sourcePath string) {
-	defer wg.Done()
+		// Create temp file
+		var f *os.File
+		if f, err = ioutil.TempFile(os.TempDir(), "astivid_"); err != nil {
+			err = errors.Wrap(err, "creating temp file failed")
+			return
+		}
+		f.Close()
+		fs[p] = f.Name()
+		ks = append(ks, p)
 
-	// Compute number of frames per point
-	framesPerPoint := int(s.AvgFramerate * 2)
+		// Make sure the temp file is deleted
+		defer os.Remove(f.Name())
 
-	// Create temp file
-	var f *os.File
-	var errRtn error
-	if f, errRtn = ioutil.TempFile(os.TempDir(), "astivid_"); errRtn != nil {
-		m.Lock()
-		*err = errors.Wrap(errRtn, "creating temp file failed")
-		m.Unlock()
-		return
-	}
-	f.Close()
-
-	// Make sure the temp file is deleted
-	defer os.Remove(f.Name())
-
-	// Execute ffmpeg command
-	if errRtn = ffmpeg.Exec(
-		context.Background(),
-		[]string{},
-		astiffmpeg.GlobalOptions{Log: &astiffmpeg.LogOptions{Level: astiffmpeg.LogLevelError}},
-		[]astiffmpeg.Input{
-			{Path: sourcePath},
-			{Path: p},
-		},
-		[]astiffmpeg.Output{{
+		// Add output
+		fo = append(fo, astiffmpeg.Output{
 			Options: &astiffmpeg.OutputOptions{
 				Encoding: &astiffmpeg.EncodingOptions{
 					ComplexFilters: []astiffmpeg.ComplexFilterOption{
 						{
 							Filters:       []string{fmt.Sprintf("scale=%d:%d", s.Width, s.Height)},
-							InputStreams:  []astiffmpeg.StreamSpecifier{{Index: astiptr.Int(1)}},
+							InputStreams:  []astiffmpeg.StreamSpecifier{{Index: astiptr.Int(idx + 1)}},
 							OutputStreams: []astiffmpeg.StreamSpecifier{{Name: "scaled"}},
 						},
 						{
@@ -310,80 +298,82 @@ func handleVisualizePSNRPath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp *ch
 				Format: "null",
 			},
 			Path: "-",
-		}},
-	); errRtn != nil {
-		m.Lock()
-		*err = errors.Wrap(errRtn, "executing ffmpeg command failed")
-		m.Unlock()
-		return
-	}
-
-	// Read file
-	var bs []byte
-	if bs, errRtn = ioutil.ReadFile(f.Name()); errRtn != nil {
-		m.Lock()
-		*err = errors.Wrapf(errRtn, "reading file %s failed", f.Name())
-		m.Unlock()
-		return
-	}
-
-	// Create colors
-	clr := cp.next()
-	if clr == nil {
-		return
-	}
-
-	// Create dataset
-	var d = &astichartjs.Dataset{
-		BackgroundColor: clr.Background,
-		BorderColor:     clr.Border,
-		Label:           filepath.Base(p),
-	}
-
-	// Loop through lines
-	var vs []astichartjs.DataPoint
-	for idx, l := range bytes.Split(bs, []byte("\n")) {
-		// Get line values
-		mp := make(map[string]float64)
-		for _, li := range bytes.Split(l, []byte(" ")) {
-			items := bytes.Split(li, []byte(":"))
-			if len(items) == 2 {
-				v, errParse := strconv.ParseFloat(string(items[1]), 64)
-				if errParse == nil {
-					mp[string(items[0])] = math.Min(v, 100)
-				}
-			}
-		}
-
-		// Get average PSNR
-		psnr, ok := mp["psnr_avg"]
-		if !ok {
-			continue
-		}
-
-		// Compute average
-		if idx%framesPerPoint == 0 && len(vs) > 0 {
-			var sum float64
-			for _, dp := range vs {
-				sum += dp.Y
-			}
-			d.Data = append(d.Data, astichartjs.DataPoint{
-				X: vs[0].X,
-				Y: sum / float64(len(vs)),
-			})
-			vs = []astichartjs.DataPoint{}
-		}
-
-		// Append data point
-		vs = append(vs, astichartjs.DataPoint{
-			X: float64(idx) / float64(s.AvgFramerate),
-			Y: psnr,
 		})
 	}
 
-	// Append dataset
-	m.Lock()
-	csd.Datasets = append(csd.Datasets, *d)
-	m.Unlock()
+	// Execute ffmpeg command
+	if err = ffmpeg.Exec(context.Background(), []string{}, astiffmpeg.GlobalOptions{Log: &astiffmpeg.LogOptions{Level: astiffmpeg.LogLevelError}}, fi, fo); err != nil {
+		err = errors.Wrap(err, "executing ffmpeg command failed")
+		return
+	}
+
+	// Loop through log files
+	sort.Strings(ks)
+	for _, k := range ks {
+		// Read file
+		var bs []byte
+		if bs, err = ioutil.ReadFile(fs[k]); err != nil {
+			err = errors.Wrapf(err, "reading file %s failed", fs[k])
+			return
+		}
+
+		// Create colors
+		clr := cp.next()
+		if clr == nil {
+			break
+		}
+
+		// Create dataset
+		var d = &astichartjs.Dataset{
+			BackgroundColor: clr.Background,
+			BorderColor:     clr.Border,
+			Label:           filepath.Base(k),
+		}
+
+		// Loop through lines
+		var vs []astichartjs.DataPoint
+		for idx, l := range bytes.Split(bs, []byte("\n")) {
+			// Get line values
+			mp := make(map[string]float64)
+			for _, li := range bytes.Split(l, []byte(" ")) {
+				items := bytes.Split(li, []byte(":"))
+				if len(items) == 2 {
+					v, errParse := strconv.ParseFloat(string(items[1]), 64)
+					if errParse == nil {
+						mp[string(items[0])] = math.Min(v, 100)
+					}
+				}
+			}
+
+			// Get average PSNR
+			psnr, ok := mp["psnr_avg"]
+			if !ok {
+				continue
+			}
+
+			// Compute average
+			if idx%int(s.AvgFramerate*2) == 0 && len(vs) > 0 {
+				var sum float64
+				for _, dp := range vs {
+					sum += dp.Y
+				}
+				d.Data = append(d.Data, astichartjs.DataPoint{
+					X: vs[0].X,
+					Y: sum / float64(len(vs)),
+				})
+				vs = []astichartjs.DataPoint{}
+			}
+
+			// Append data point
+			vs = append(vs, astichartjs.DataPoint{
+				X: float64(idx) / float64(s.AvgFramerate),
+				Y: psnr,
+			})
+		}
+
+		// Append dataset
+		cs[0].Data.Datasets = append(cs[0].Data.Datasets, *d)
+	}
+	payload = cs
 	return
 }

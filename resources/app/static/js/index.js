@@ -11,6 +11,7 @@ let index = {
         })
     },
     reset: function() {
+        document.getElementById("content").style.verticalAlign = "middle";
         document.getElementById("content").innerHTML = '<button id="btn-start" class="btn-sm btn-success">Start</button>';
         document.getElementById("btn-start").onclick = function() {
             astilectron.showOpenDialog({message: "Select files", properties: ['openFile', 'multiSelections'], title: "Select files"}, function(paths) {
