@@ -15,7 +15,6 @@ var (
 	AppName string
 	BuiltAt string
 	c       Configuration
-	debug   = flag.Bool("d", false, "if yes, the app is in debug mode")
 	ffmpeg  *astiffmpeg.FFMpeg
 	ffprobe *astiffprobe.FFProbe
 )
