@@ -163,12 +163,12 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp 
 			continue
 		}
 
-		// Retrieve frames
-		var fs []astiffprobe.Frame
-		astilog.Debugf("Retrieving frames of stream %d of %s", s.Index, p)
-		if fs, errRtn = ffprobe.Frames(context.Background(), p, s.Index); errRtn != nil {
+		// Retrieve packets
+		var ps []astiffprobe.Packet
+		astilog.Debugf("Retrieving packets of stream %d of %s", s.Index, p)
+		if ps, errRtn = ffprobe.PacketsOrdered(context.Background(), p, s.Index); errRtn != nil {
 			m.Lock()
-			*err = errors.Wrapf(errRtn, "retrieving frames of stream %d of %s", s.Index, p)
+			*err = errors.Wrapf(errRtn, "retrieving packets of stream %d of %s", s.Index, p)
 			m.Unlock()
 			return
 		}
@@ -186,29 +186,38 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp 
 			Label:           filepath.Base(p),
 		}
 
-		// Loop through frames
+		// Loop through packets
 		var vs []astichartjs.DataPoint
-		for _, f := range fs {
-			// Compute average
-			if f.PictType == "I" && len(vs) > 0 {
-				var sum float64
-				for _, dp := range vs {
-					sum += dp.Y
-				}
-				d.Data = append(d.Data, astichartjs.DataPoint{
-					X: vs[0].X,
-					Y: sum / float64(len(vs)),
-				})
-				vs = []astichartjs.DataPoint{}
-			}
+		var lastInsertedTime float64
+		for _, p := range ps {
+			// Sometimes the duration time is 0
+			if p.DurationTime.Duration > 0 {
+				// Check time
+				t := p.PtsTime.Duration
+				if len(vs) > 1 && t.Seconds() > lastInsertedTime+2 {
+					// Compute sum
+					var sum float64
+					for _, dp := range vs {
+						sum += dp.Y
+					}
 
-			// Sometimes the pkt duration time is 0
-			if f.PktDurationTime.Duration > 0 {
-				var d = astichartjs.DataPoint{
-					X: f.BestEffortTimestampTime.Seconds(),
-					Y: float64(f.PktSize) / f.PktDurationTime.Seconds() / 1024 * 8,
+					// Append
+					d.Data = append(d.Data, astichartjs.DataPoint{
+						X: vs[0].X,
+						Y: sum / float64(len(vs)),
+					})
+
+					// Reset
+					lastInsertedTime = vs[len(vs)-1].X
+					vs = []astichartjs.DataPoint{}
 				}
-				vs = append(vs, d)
+
+				// Append data point
+				var dp = astichartjs.DataPoint{
+					X: t.Seconds(),
+					Y: float64(p.Size) / p.DurationTime.Seconds() / 1024 * 8,
+				}
+				vs = append(vs, dp)
 			}
 		}
 
