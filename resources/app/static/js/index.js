@@ -63,9 +63,21 @@ let index = {
 
             // Loop through charts
             for (let i = 0; i < message.payload.length; i++) {
+                let wrapper = document.createElement("div");
+                document.getElementById("charts").append(wrapper);
+                let header = document.createElement("div");
+                header.style.textAlign = "right";
+                wrapper.append(header);
+                let download = document.createElement("a");
+                header.append(download);
                 let canvas = document.createElement("canvas");
-                document.getElementById("charts").append(canvas);
-                new Chart(canvas, message.payload[i]);
+                wrapper.append(canvas);
+                let payload = message.payload[i];
+                let c;
+                payload.options.animation = {onComplete: function() {
+                    download.outerHTML = "<a href='" + c.toBase64Image() + "' style='color: inherit' download><i class='fa fa-download'></i></a>";
+                }};
+                c = new Chart(canvas, payload);
             }
         })
     }
