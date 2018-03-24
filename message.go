@@ -37,56 +37,29 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (p interface{}
 	return
 }
 
-type chartColors struct {
+type chartColor struct {
 	Background, Border string
 }
 
-func allChartColors() []*chartColors {
-	return []*chartColors{
-		{Background: astichartjs.ChartBackgroundColorBlue, Border: astichartjs.ChartBorderColorBlue},
-		{Background: astichartjs.ChartBackgroundColorGreen, Border: astichartjs.ChartBorderColorGreen},
-		{Background: astichartjs.ChartBackgroundColorRed, Border: astichartjs.ChartBorderColorRed},
-		{Background: astichartjs.ChartBackgroundColorYellow, Border: astichartjs.ChartBorderColorYellow},
-		{Background: astichartjs.ChartBackgroundColorPurple, Border: astichartjs.ChartBorderColorPurple},
-		{Background: astichartjs.ChartBackgroundColorOrange, Border: astichartjs.ChartBorderColorOrange},
-	}
-}
-
-type chartColorPicker struct {
-	colors []*chartColors
-}
-
-func newChartColorPicker() *chartColorPicker {
-	return &chartColorPicker{colors: allChartColors()}
-}
-
-func (p *chartColorPicker) next() (c *chartColors) {
-	if len(p.colors) > 0 {
-		c = p.colors[0]
-		p.colors = p.colors[1:]
-		return
-	}
-	return
+var chartColors = map[string]chartColor{
+	"blue":   {Background: astichartjs.ChartBackgroundColorBlue, Border: astichartjs.ChartBorderColorBlue},
+	"green":  {Background: astichartjs.ChartBackgroundColorGreen, Border: astichartjs.ChartBorderColorGreen},
+	"red":    {Background: astichartjs.ChartBackgroundColorRed, Border: astichartjs.ChartBorderColorRed},
+	"yellow": {Background: astichartjs.ChartBackgroundColorYellow, Border: astichartjs.ChartBorderColorYellow},
+	"purple": {Background: astichartjs.ChartBackgroundColorPurple, Border: astichartjs.ChartBorderColorPurple},
+	"orange": {Background: astichartjs.ChartBackgroundColorOrange, Border: astichartjs.ChartBorderColorOrange},
 }
 
 type Body struct {
-	InputPaths []string `json:"input_paths"`
-	SourcePath string   `json:"source_path"`
+	InputPaths map[string]string `json:"input_paths"`
+	SourcePath string            `json:"source_path"`
 }
 
-func initVisualize(i bootstrap.MessageIn, labelYAxe string) (b Body, cs []astichartjs.Chart, cp *chartColorPicker, err error) {
+func initVisualize(i bootstrap.MessageIn, labelYAxe string) (b Body, cs []astichartjs.Chart, err error) {
 	// Decode input
 	if err = json.Unmarshal(i.Payload, &b); err != nil {
 		err = errors.Wrap(err, "decoding input failed")
 		return
-	}
-
-	// Create color picker
-	cp = newChartColorPicker()
-
-	// Max number of datasets
-	if len(b.InputPaths) > len(cp.colors) {
-		b.InputPaths = b.InputPaths[:len(cp.colors)]
 	}
 
 	// Create charts
@@ -123,7 +96,7 @@ func initVisualize(i bootstrap.MessageIn, labelYAxe string) (b Body, cs []astich
 
 func handleVisualizeBitrate(i bootstrap.MessageIn) (payload interface{}, err error) {
 	// Initialize visualization
-	b, cs, cp, err := initVisualize(i, "Bitrate (kb/s)")
+	b, cs, err := initVisualize(i, "Bitrate (kb/s)")
 	if err != nil {
 		err = errors.Wrap(err, "initializing visualize failed")
 		return
@@ -132,17 +105,36 @@ func handleVisualizeBitrate(i bootstrap.MessageIn) (payload interface{}, err err
 	// Loop through paths
 	var m = &sync.Mutex{}
 	var wg = &sync.WaitGroup{}
-	for _, p := range b.InputPaths {
+	var ds = make(map[string]astichartjs.Dataset)
+	for color, p := range b.InputPaths {
 		wg.Add(1)
-		go handleVisualizeBitratePath(p, wg, m, cp, cs[0].Data, &err)
+		go handleVisualizeBitratePath(p, wg, m, color, ds, &err)
 	}
 	wg.Wait()
+
+	// Order datasets
+	var ks []string
+	for p := range ds {
+		ks = append(ks, p)
+		sort.Strings(ks)
+	}
+
+	// Add datasets
+	for _, k := range ks {
+		cs[0].Data.Datasets = append(cs[0].Data.Datasets, ds[k])
+	}
 	payload = cs
 	return
 }
 
-func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp *chartColorPicker, csd *astichartjs.Data, err *error) {
+func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, color string, ds map[string]astichartjs.Dataset, err *error) {
 	defer wg.Done()
+
+	// Retrieve color
+	clr, ok := chartColors[color]
+	if !ok {
+		return
+	}
 
 	// Retrieve streams
 	var ss []astiffprobe.Stream
@@ -171,12 +163,6 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp 
 			*err = errors.Wrapf(errRtn, "retrieving packets of stream %d of %s", s.Index, p)
 			m.Unlock()
 			return
-		}
-
-		// Create colors
-		clr := cp.next()
-		if clr == nil {
-			continue
 		}
 
 		// Create dataset
@@ -223,7 +209,7 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp 
 
 		// Append dataset
 		m.Lock()
-		csd.Datasets = append(csd.Datasets, *d)
+		ds[p] = *d
 		m.Unlock()
 
 		// We only process one stream per path
@@ -234,7 +220,7 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, cp 
 
 func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error) {
 	// Initialize visualization
-	b, cs, cp, err := initVisualize(i, "PSNR")
+	b, cs, err := initVisualize(i, "PSNR")
 	if err != nil {
 		err = errors.Wrap(err, "initializing visualize failed")
 		return
@@ -266,9 +252,19 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 	// Loop through paths
 	fi := []astiffmpeg.Input{{Path: b.SourcePath}}
 	var fo []astiffmpeg.Output
-	fs := make(map[string]string)
+	type output struct {
+		color chartColor
+		path  string
+	}
+	fs := make(map[string]output)
 	var ks []string
-	for idx, p := range b.InputPaths {
+	for color, p := range b.InputPaths {
+		// Retrieve color
+		clr, ok := chartColors[color]
+		if !ok {
+			continue
+		}
+
 		// Add input
 		fi = append(fi, astiffmpeg.Input{Path: p})
 
@@ -279,7 +275,10 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 			return
 		}
 		f.Close()
-		fs[p] = f.Name()
+		fs[p] = output{
+			color: clr,
+			path:  f.Name(),
+		}
 		ks = append(ks, p)
 
 		// Make sure the temp file is deleted
@@ -292,7 +291,7 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 					ComplexFilters: []astiffmpeg.ComplexFilterOption{
 						{
 							Filters:       []string{fmt.Sprintf("scale=%d:%d", s.Width, s.Height)},
-							InputStreams:  []astiffmpeg.StreamSpecifier{{Index: astiptr.Int(idx + 1)}},
+							InputStreams:  []astiffmpeg.StreamSpecifier{{Index: astiptr.Int(len(fi) - 1)}},
 							OutputStreams: []astiffmpeg.StreamSpecifier{{Name: "scaled"}},
 						},
 						{
@@ -321,21 +320,15 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 	for _, k := range ks {
 		// Read file
 		var bs []byte
-		if bs, err = ioutil.ReadFile(fs[k]); err != nil {
+		if bs, err = ioutil.ReadFile(fs[k].path); err != nil {
 			err = errors.Wrapf(err, "reading file %s failed", fs[k])
 			return
 		}
 
-		// Create colors
-		clr := cp.next()
-		if clr == nil {
-			break
-		}
-
 		// Create dataset
 		var d = &astichartjs.Dataset{
-			BackgroundColor: clr.Background,
-			BorderColor:     clr.Border,
+			BackgroundColor: fs[k].color.Background,
+			BorderColor:     fs[k].color.Border,
 			Label:           filepath.Base(k),
 		}
 
