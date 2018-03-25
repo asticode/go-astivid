@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"sync"
 
+	"time"
+
 	"github.com/asticode/go-astichartjs"
 	"github.com/asticode/go-astiffmpeg"
 	"github.com/asticode/go-astiffprobe"
@@ -176,35 +178,38 @@ func handleVisualizeBitratePath(p string, wg *sync.WaitGroup, m *sync.Mutex, col
 		var vs []astichartjs.DataPoint
 		var lastInsertedTime float64
 		for _, p := range ps {
-			// Sometimes the duration time is 0
+			// Since we only analyze video, we assume the framerate is 25 fps by default
+			var drt = 40 * time.Millisecond
 			if p.DurationTime.Duration > 0 {
-				// Check time
-				t := p.PtsTime.Duration
-				if len(vs) > 1 && t.Seconds() > lastInsertedTime+2 {
-					// Compute sum
-					var sum float64
-					for _, dp := range vs {
-						sum += dp.Y
-					}
-
-					// Append
-					d.Data = append(d.Data, astichartjs.DataPoint{
-						X: vs[0].X,
-						Y: sum / float64(len(vs)),
-					})
-
-					// Reset
-					lastInsertedTime = vs[len(vs)-1].X
-					vs = []astichartjs.DataPoint{}
-				}
-
-				// Append data point
-				var dp = astichartjs.DataPoint{
-					X: t.Seconds(),
-					Y: float64(p.Size) / p.DurationTime.Seconds() / 1024 * 8,
-				}
-				vs = append(vs, dp)
+				drt = p.DurationTime.Duration
 			}
+
+			// Check time
+			t := p.PtsTime.Duration
+			if len(vs) > 1 && t.Seconds() > lastInsertedTime+2 {
+				// Compute sum
+				var sum float64
+				for _, dp := range vs {
+					sum += dp.Y
+				}
+
+				// Append
+				d.Data = append(d.Data, astichartjs.DataPoint{
+					X: vs[0].X,
+					Y: sum / float64(len(vs)),
+				})
+
+				// Reset
+				lastInsertedTime = vs[len(vs)-1].X
+				vs = []astichartjs.DataPoint{}
+			}
+
+			// Append data point
+			var dp = astichartjs.DataPoint{
+				X: t.Seconds(),
+				Y: float64(p.Size) / drt.Seconds() / 1024 * 8,
+			}
+			vs = append(vs, dp)
 		}
 
 		// Append dataset
