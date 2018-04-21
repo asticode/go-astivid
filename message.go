@@ -315,7 +315,7 @@ func handleVisualizePSNR(i bootstrap.MessageIn) (payload interface{}, err error)
 	}
 
 	// Execute ffmpeg command
-	if err = ffmpeg.Exec(context.Background(), []string{}, astiffmpeg.GlobalOptions{Log: &astiffmpeg.LogOptions{Level: astiffmpeg.LogLevelError}}, fi, fo); err != nil {
+	if err = ffmpeg.Exec(context.Background(), astiffmpeg.GlobalOptions{Log: &astiffmpeg.LogOptions{Level: astiffmpeg.LogLevelError}}, fi, fo); err != nil {
 		err = errors.Wrap(err, "executing ffmpeg command failed")
 		return
 	}
