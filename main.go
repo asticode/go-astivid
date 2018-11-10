@@ -41,16 +41,18 @@ func main() {
 			AppIconDarwinPath:  "resources/gopher.icns",
 			AppIconDefaultPath: "resources/gopher.png",
 		},
-		Debug:          true,
-		Homepage:       "index.html",
-		MessageHandler: handleMessages,
-		RestoreAssets:  RestoreAssets,
-		WindowOptions: &astilectron.WindowOptions{
-			BackgroundColor: astilectron.PtrStr("#333"),
-			Center:          astilectron.PtrBool(true),
-			Height:          astilectron.PtrInt(600),
-			Width:           astilectron.PtrInt(600),
-		},
+		Debug:         true,
+		RestoreAssets: RestoreAssets,
+		Windows: []*bootstrap.Window{{
+			Homepage:       "index.html",
+			MessageHandler: handleMessages,
+			Options: &astilectron.WindowOptions{
+				BackgroundColor: astilectron.PtrStr("#333"),
+				Center:          astilectron.PtrBool(true),
+				Height:          astilectron.PtrInt(600),
+				Width:           astilectron.PtrInt(600),
+			},
+		}},
 	}); err != nil {
 		astilog.Fatal(err)
 	}
